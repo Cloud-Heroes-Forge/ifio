@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FIO Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>FIO Report</h1>
+
+    <h2>Blocksize Summary</h2>
+    <p>{{ blocksize_summary }}</p>
+
+    <h2>Throughput and Latency by Blocksize</h2>
+    <div>
+        <h3>Total Throughput vs Blocksize</h3>
+        {{ total_throughput_chart|safe }}
+    </div>
+    <div>
+        <h3>Average Latency vs Blocksize</h3>
+        {{ avg_latency_chart|safe }}
+    </div>
+
+    {% for bs, bs_data in blocksize_data.items() %}
+        <h2>Blocksize {{ bs }}</h2>
+        <p>{{ bs_data.summary }}</p>
+        <div>
+            <h3>Total Throughput vs io_depth</h3>
+            {{ bs_data.total_throughput_chart|safe }}
+        </div>
+        <div>
+            <h3>Total IOPS vs io_depth</h3>
+            {{ bs_data.total_iops_chart|safe }}
+        </div>
+    {% endfor %}
+</body>
+</html>
