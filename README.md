@@ -10,6 +10,8 @@ All without the need for additional scripts to wrap around fio!
 
 ifio.py requires the `fio` package to be installed on the system.
 
+I recommend fio version >3.3 due to potential inflated write performance as detailed here - https://www.n0derunner.com/fio-versions-3-3-may-show-inflated-random-write-performance/
+
 ## Installation
 
 To install ifio.py, simply clone the repository to your system, install fio and the python packages listed in `requirements`.
