@@ -1,8 +1,10 @@
 # ifio.py
 
-ifio.py is a Python script that automates the process of running storage performance tests using the `fio` package. It allows users to easily specify block sizes, read percentages, and other parameters to test, and generates a set of reports with the results.
+ifio.py is a Python script that automates the process of running storage performance tests using the `fio` package. It allows users to easily specify any number of  block sizes, read percentages, and other parameters to test, and generates a set of reports with the results. 
 
-This automatically determines the queue depth for each test, taking the guess work out for you. The script also sends email notifications when the tests are complete.
+This automatically determines the queue depth for each test, taking the guess work out for you. The script also generates and saves graphical reports as well as results in both json and csv when the tests are complete.
+
+All without the need for additional scripts to wrap around fio!
 
 ## Requirements
 
