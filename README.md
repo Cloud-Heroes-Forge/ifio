@@ -1,14 +1,26 @@
-# Autofio.py
+# ifio.py
 
-Autofio.py is a Python script that automates the process of running disk storage performance tests using the `fio` package. It allows users to easily specify block sizes, read percentages, and other parameters to test, and generates a set of reports with the results.
+ifio.py is a Python script that automates the process of running storage performance tests using the `fio` package. It allows users to easily specify block sizes, read percentages, and other parameters to test, and generates a set of reports with the results.
+
+This automatically determines the queue depth for each test, taking the guess work out for you. The script also sends email notifications when the tests are complete.
 
 ## Requirements
 
-Autofio.py requires the `fio` package to be installed on the system.
+ifio.py requires the `fio` package to be installed on the system.
+
+## Installation
+
+To install ifio.py, simply clone the repository to your system, install fio and the python packages listed in `requirements`.
+
+```bash
+git clone git@github.com:Cloud-Heroes-Forge/ifio.git
+yum install fio
+pip install -r requirements
+```
 
 ## Usage
 
-To use autofio.py, simply run the script with the desired parameters. The following command-line arguments are available:
+To use ifio.py, simply run the script with the desired parameters. The following command-line arguments are available:
 
 - `-h, --help`: Displays help message and exits.
 - `-v, --verbose`: Displays verbose output.
@@ -22,12 +34,12 @@ To use autofio.py, simply run the script with the desired parameters. The follow
 For example, to test with block sizes of 8K and 32K, and read percentages of 0, 25, 50, 75, and 100, run the following command:
 
 ```
-python autofio.py -bs "8K,randrw 32K,rw" -rw "0 25 50 75 100"
+python ifio.py -bs 8K,randrw 32K,rw -rw 0 25 50 75 100
 ```
 
 ## Output
 
-Autofio.py generates a report with the results of the performance tests. The report includes the following information:
+ifio.py generates a report with the results of the performance tests. The report includes the following information:
 
 - Block size and IO type
 - Read percentage
