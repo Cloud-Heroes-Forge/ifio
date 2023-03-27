@@ -110,7 +110,10 @@ def main():
     values_to_test: list = []
     results: dict = {}
     for blocksize in args.blocksize:
-        for read_percentage in args.readpercentages:
+        read_percentages = args.readpercentages
+        if len(read_percentages) == 1:
+            read_percentages = read_percentages[0].split(" ")
+        for read_percentage in read_percentages:
             bs = blocksize.split(',')[0]
             rw = blocksize.split(',')[1] if len(blocksize.split(',')) > 1 else 'randrw'
             values_to_test.append((bs, rw, read_percentage))
