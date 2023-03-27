@@ -109,7 +109,10 @@ def main():
 
     values_to_test: list = []
     results: dict = {}
-    for blocksize in args.blocksize:
+    blocksizes = args.blocksize
+    if len(blocksizes) == 1: 
+        blocksizes = blocksizes[0].split(" ")
+    for blocksize in blocksizes:
         read_percentages = args.readpercentages
         if len(read_percentages) == 1:
             read_percentages = read_percentages[0].split(" ")
