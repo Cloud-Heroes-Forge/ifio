@@ -31,23 +31,23 @@ def generate_rwmix_stacked_graphs(data: pd.DataFrame) -> plt.Figure:
     
     fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(8, 8), gridspec_kw={'height_ratios': [1, 1]})
     # Create stacked (read and write) throughput graph for each blocksize on ax1
-    ax1.bar(x=data['read_percent'], height=data['read_throughput'], label='Read', color='blue', width=10)
-    ax1.bar(x=data['read_percent'], height=data['write_throughput'], label='Write', color='orange', width=10, bottom=data['read_throughput'])
+    ax1.bar(x=data['read_percent'], height=data['read_throughput']/1024, label='Read', color='blue', width=10)
+    ax1.bar(x=data['read_percent'], height=data['write_throughput']/1024, label='Write', color='orange', width=10, bottom=data['read_throughput']/1024)
     # add a comment to the graph for total throughput on each bar
     for i in range(len(data['read_percent'])):
-        ax1.annotate(f"{data['total_throughput'].values[i]:.0f} KiB/s",
-                xy=(data['read_percent'].values[i], data['total_throughput'].values[i]),
-                xytext=(data['read_percent'].values[i], data['total_throughput'].values[i] + 100)
+        ax1.annotate(f"{data['total_throughput'].values[i]/1024:.0f} MiB/s",
+                xy=(data['read_percent'].values[i], data['total_throughput'].values[i]/1024),
+                xytext=(data['read_percent'].values[i], data['total_throughput'].values[i]/1024 + 100)
     )
     ax1.set_xticks(data['read_percent'])
     ax1.set_xlabel('Read Percentage')
     ax1.set_xticklabels(data['read_percent'])
-    ax1.set_ylabel('Throughput (KiB/s)')
+    ax1.set_ylabel('Throughput (MiB/s)')
     ax1.legend()
 
     # Create line chart with avg_latency on right axis and total iops on left axis
     ax2.plot(data['read_percent'], data['avg_latency'], label='Avg Latency', color='blue')
-    ax2.set_ylabel('Avg Latency (ms)')
+    ax2.set_ylabel('Avg Latency (µs)')
     ax2.set_xlabel('Read Percentage')
     ax2.set_xticks(data['read_percent'])
     ax2.set_xticklabels(data['read_percent'])
@@ -58,6 +58,8 @@ def generate_rwmix_stacked_graphs(data: pd.DataFrame) -> plt.Figure:
     ax3.set_ylabel('Total IOPS')
     ax3.set_ylim(0, data['total_iops'].max() * 1.1)
     ax3.legend(loc='upper right')
+
+    fig.suptitle(f"FIO Block size: {str(data['blocksize'].iloc[0])}")
     return fig
 
 

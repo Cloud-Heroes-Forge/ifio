@@ -23,13 +23,9 @@ def arg_parser_setup() -> Namespace:
                         help='Block Sizes,[randrw/rw] to test. Defaults to 8K,randrw. ' +
                             'Append ,rw to specify sequential IO and ,randrw for random IO. ' +
                             'For multiple block sizes use -bs 8K,randrw 32K,rw 64K,rw')
-    parser.add_argument('-rw', '--readpercentages', nargs='+', default=["50"],
-                        help='Read Percentage to test. Defaults to 50, for multiple read percentages use -rw 0 25 50 75 100')
+    parser.add_argument('-rw', '--readpercentages', nargs='+', default=["0", "25", "50", "75", "100"],
+                        help='Read Percentage to test. Defaults to 0 25 50 75 100, for multiple read percentages use -rw 0 10 20 30 40')
     # region advanced options
-    parser.add_argument('-min', '--minimum', type=int, default=1, 
-                        action='store', help='Minimum Queue Depth to test. Defaults to 1')
-    parser.add_argument('-max', '--maximum', type=int, default=256, 
-                        action='store', help='Maximum Queue Depth to test. Defaults to 256, max recommended is 65536')
     parser.add_argument('-c', '--config', default='fio.ini',
                         help='path to config file. Defaults to fio.ini')
     parser.add_argument('-e', '--email', nargs='+', 
@@ -37,7 +33,6 @@ def arg_parser_setup() -> Namespace:
     parser.add_argument('-tw', '--throughputweight', type=int, default=1,
                         help='Weight of Throughput for ATP calculation. Defaults to 1')
     # endregion advanced options
-    #parser.add_argument('-mode', '--mode', default="max_io_rate", help="Mode to run fio in. Defaults to rw")
     parser.add_argument('-n', '--name', default="fio-test", help="Name of the fio job(s). Defaults to job1")
     args = parser.parse_args()
     logging.debug(f"Arguments: {args}")
@@ -86,7 +81,7 @@ def save_summary_output(results: Dict[tuple, FioOptimizer]) -> None:
         fig: plt.Figure = pgreports.generate_rwmix_stacked_graphs(blocksize_df)
         if not os.path.exists(output_folder):
             os.makedirs(output_folder, exist_ok=True)
-        fig.savefig(f'{output_folder}/{blocksize[0]}_rwmix.png')
+        fig.savefig(f'{output_folder}/{blocksize}_{str(blocksize_df["read_percent"])}.png')
     
     # pgreports.generate_fio_report(combined_results, output_folder)
 
@@ -106,7 +101,7 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
         logging.debug("Verbose Output Enabled")
         logging.debug(f"Arguments: {args}")
-
+    
     values_to_test: list = []
     results: dict = {}
     blocksizes = args.blocksize
@@ -136,8 +131,8 @@ def main():
         fio_optimizer.config['bs'] = values[0]
         fio_optimizer.config['rw'] = values[1]
         fio_optimizer.config['rwmixread'] = values[2]
-        fio_optimizer.min = args.minimum if args.minimum > 0 else 1
-        fio_optimizer.max = args.maximum if args.maximum > 0 else 65536
+        fio_optimizer.min = 1
+        fio_optimizer.max = 65536
         fio_optimizer.throughputweight = args.throughputweight if args.throughputweight > 0 else 1
 
         logging.debug(f"Optimizer Config: {fio_optimizer.config}")

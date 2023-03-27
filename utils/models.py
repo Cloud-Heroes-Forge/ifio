@@ -48,7 +48,7 @@ class FioBase:
             self.avg_latency = self.read_latency
         else:
             self.avg_latency = ((self.read_latency * self.read_iops) + (self.write_latency * self.write_iops)) / self.total_iops
-        self.read_percent = round((self.read_iops / self.total_iops) * 100 if self.total_iops != 0 else 0)
+        # self.read_percent = round((self.read_iops / self.total_iops) * 100 if self.total_iops != 0 else 0)
 
     def to_dict(self) -> dict:
         return self.__dict__
@@ -150,6 +150,7 @@ class FioOptimizer:
                                          'avg_latency': latency})
             self.atp = ATP(data=current_data, alpha=self.throughputweight) 
             # what is the maximum io depth where the latency is less than the throughput (x) value (which is ATP)
+            checking_df = self.atp.data[self.atp.data['avg_latency'] < self.atp.data.iloc[self.atp.j]['avg_latency']]
             optimal_iodepth = max(self.atp.j, 1)
             logging.info(f"Best IO Depth: {optimal_iodepth}")
             # build a new list of queue depths to test
@@ -215,6 +216,7 @@ class FioOptimizer:
         fio_run: FioBase = FioBase()
         fio_run.io_depth = io_depth
         fio_run.blocksize = self.config['bs']
+        fio_run.read_percent = int(self.config['rwmixread'])
         fio_run.parse_stdout(raw_stdout=stdout)
         self.runs[io_depth] = fio_run
         self.tested_iodepths.append(io_depth)
