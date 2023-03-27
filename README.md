@@ -50,7 +50,7 @@ ifio.py generates a report with the results of the performance tests. The report
 - Average throughput
 - Average IOPS
 - Average latency
-- ATP (Application Throughput Performance) score, calculated using the half-latency rule from the paper "Half-Latency Rule for Finding the Knee of the Latency Curve" by Naresh M. Patel found here: https://dl.acm.org/doi/abs/10.1145/2825236.2825248
+- ATP (Accelerated Throughput Power) score, calculated using the half-latency rule from the paper "Half-Latency Rule for Finding the Knee of the Latency Curve" by Naresh M. Patel found here: https://dl.acm.org/doi/abs/10.1145/2825236.2825248
 
 
 The report is saved to an output folder in the same directory as the script.
