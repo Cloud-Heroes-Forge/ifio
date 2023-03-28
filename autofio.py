@@ -42,7 +42,7 @@ def save_single_output(fio_opt: FioOptimizer, timestamp: datetime) -> None:
     """
     
     """
-    output_folder: str = os.path.join(os.getcwd(), f'output/ifio_{timestamp}/{fio_opt.config["bs"]}_{fio_opt.config["rw"]}_{fio_opt.config["rwmixread"]}')
+    output_folder: str = os.path.join(os.getcwd(), f'output/ifio_{timestamp}', f'/{fio_opt.config["bs"]}_{fio_opt.config["rw"]}_{fio_opt.config["rwmixread"]}')
     logging.debug(f"Saving output to {output_folder}")
     try:
         if not os.path.exists(output_folder):
