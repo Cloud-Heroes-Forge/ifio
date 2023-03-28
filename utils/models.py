@@ -150,7 +150,7 @@ class FioOptimizer:
                                          'avg_latency': latency})
             self.atp = ATP(data=current_data, alpha=self.throughputweight) 
             # what is the maximum io depth where the latency is less than the throughput (x) value (which is ATP)
-            checking_df = self.atp.data[self.atp.data['avg_latency'] < self.atp.data.iloc[self.atp.j]['avg_latency']]
+            # checking_df = self.atp.data[self.atp.data['avg_latency'] < self.atp.data.iloc[self.atp.j]['avg_latency']]
             optimal_iodepth = max(self.atp.j, 1)
             logging.info(f"Best IO Depth: {optimal_iodepth}")
             # build a new list of queue depths to test
