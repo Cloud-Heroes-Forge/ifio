@@ -38,12 +38,12 @@ def arg_parser_setup() -> Namespace:
     logging.debug(f"Arguments: {args}")
     return args
 
-def save_single_output(fio_opt: FioOptimizer) -> None:
+def save_single_output(fio_opt: FioOptimizer, timestamp: datetime) -> None:
     """
     
     """
-    output_folder: str = os.path.join(os.getcwd(), 
-                                      f'output/{fio_opt.config["bs"]}_{fio_opt.config["rw"]}/{fio_opt.config["rwmixread"]}')
+    output_folder: str = os.path.join(os.getcwd(), f'output/ifio_{timestamp}/{fio_opt.config["bs"]}_{fio_opt.config["rw"]}_{fio_opt.config["rwmixread"]}')
+    logging.debug(f"Saving output to {output_folder}")
     try:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder, exist_ok=True)
@@ -53,13 +53,17 @@ def save_single_output(fio_opt: FioOptimizer) -> None:
         logging.info(f"Saving Raw Output to {output_folder}/raw.json")
         with open(f'{output_folder}/raw.json', 'w') as f:
             json.dump(fio_opt.runs_raw, f)
+        fig: plt.Figure = pgreports.generate_single_run_graphs(fio_optimizer_df)
+        plt.plot(fig)
+        plt.savefig(f'{output_folder}_queueDepthChart.png')
+
     except json.JSONDecodeError as jde:
         logging.debug(f'failed to save results: {jde}')
 
-def save_summary_output(results: Dict[tuple, FioOptimizer]) -> None:
+def save_summary_output(results: Dict[tuple, FioOptimizer], timestamp: datetime) -> None:
     logging.info("Saving Summary Output")
     output_folder: str = os.path.join(os.getcwd(), 
-                                      f'output/summary_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+                                      f'output/ifio_{timestamp}')
     combined_results: pd.DataFrame = pd.DataFrame()
     # best_runs: Dict[str, FioBase] = {}
     best_runs_df: pd.DataFrame = pd.DataFrame()
@@ -81,7 +85,7 @@ def save_summary_output(results: Dict[tuple, FioOptimizer]) -> None:
         fig: plt.Figure = pgreports.generate_rwmix_stacked_graphs(blocksize_df)
         if not os.path.exists(output_folder):
             os.makedirs(output_folder, exist_ok=True)
-        fig.savefig(f'{output_folder}/{blocksize}_{str(blocksize_df["read_percent"])}.png')
+        fig.savefig(f'{output_folder}/{blocksize}_{blocksize_df["read_percent"].values[0]}.png')
     
     # pgreports.generate_fio_report(combined_results, output_folder)
 
@@ -117,7 +121,7 @@ def main():
             values_to_test.append((bs, rw, read_percentage))
     logging.info(f'Total Values to Test: {len(values_to_test)}')
     logging.debug(f'Values to Test: {values_to_test}')
-
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     for index, values in enumerate(values_to_test):
         logging.info(f"Starting {index+1} of {len(values_to_test)}:  {values[0]} {values[1]} {values[2]} ")
         fio_optimizer: FioOptimizer = FioOptimizer()
@@ -138,12 +142,12 @@ def main():
         logging.debug(f"Optimizer Config: {fio_optimizer.config}")
         fio_optimizer.find_optimal_iodepth()
 
-        save_single_output(fio_optimizer)
+        save_single_output(fio_optimizer, timestamp)
         results[values] = fio_optimizer
         logging.info(f"Finished {index+1} of {len(values_to_test)}:  {values[0]} {values[1]} {values[2]} ")
         logging.info(f"##################################################")
 
-    save_summary_output(results)
+    save_summary_output(results, timestamp)
         
 
         

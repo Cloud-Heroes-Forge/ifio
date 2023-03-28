@@ -63,6 +63,29 @@ def generate_rwmix_stacked_graphs(data: pd.DataFrame) -> plt.Figure:
     return fig
 
 
+def generate_single_run_graphs(data: pd.DataFrame) -> plt.Figure:
+    """
+    Generates a graph with queue depth as x-axis and iops as left y axis, and latency as right y axis.
+    """
+    fig, ax1 = plt.subplots()
+
+    # plot total iops on the left y-axis
+    ax1.plot(data['io_depth'], data['total_iops'], color='tab:blue')
+    ax1.set_ylabel('Total IOPS', color='tab:blue')
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+    ax1.set_xticks(data['io_depth'])
+    ax1.set_xticklabels(data['io_depth'])
+
+    # plot average latency on the right y-axis
+    ax2 = ax1.twinx()
+    ax2.plot(data['io_depth'], data['avg_latency'], color='tab:orange')
+    ax2.set_ylabel('Average Latency (ms)', color='tab:orange')
+    ax2.tick_params(axis='y', labelcolor='tab:orange')
+
+    plt.title(f'Total IOPS vs Queue Depth for Blocksize {data["blocksize"].values[0]}')
+    plt.tight_layout()
+    return fig
+
 def generate_fio_report(data: pd.DataFrame, report_file_path: str) -> None:
     """Using the template.html file, generates an html report for the fio results.
         * overall summary of all of the `blocksize` parameters together
