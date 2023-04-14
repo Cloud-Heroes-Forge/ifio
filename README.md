@@ -24,7 +24,11 @@ pip install -r requirements
 
 ## Usage
 
-To use ifio.py, simply run the script with the desired parameters. The following command-line arguments are available:
+To use ifio.py, simply run the script with the desired parameters. 
+
+Most configuration options should be specified in `fio.ini` (specified with `-c filename.ini` if using anything other than fio.ini).  An example [fio.ini](fio.ini) is included in this repo for settings such as directories/files, which ioengine to use, runtime and number of jobs. 
+
+The following command-line arguments are available:
 
 - `-h, --help`: Displays help message and exits.
 - `-v, --verbose`: Displays verbose output.
