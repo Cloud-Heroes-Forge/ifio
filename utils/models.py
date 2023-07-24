@@ -31,7 +31,7 @@ class FioBase:
         self.duration: float = 0
 
         self.blocksize: str = None
-        self.io_depth: int = 0
+        self.iodepth: int = 0
         # self.raw_stdout: str = None
         # self.ERROR_CODE = None
 
@@ -136,7 +136,7 @@ class FioOptimizer:
         is_optimial: bool = False
         current_data: pd.DataFrame = None
         while not is_optimial: 
-            # Test minimum io_depth and maximum io_depth
+            # Test minimum iodepth and maximum iodepth
             # logging.info(f"min: {self.min}\t max: {self.max}")
             # self.prepare_and_run_fio(queue_depths=[self.min, self.max])    
             # Check if min and max are 1 away from each other, 
@@ -160,6 +160,7 @@ class FioOptimizer:
                 retest_df = self.__validate_optimal_iodepth(optimal_iodepth)
                 retest_df['normlized_throughput'] = retest_df['total_throughput'] / retest_df['total_throughput'].max()
                 retest_df['normlized_latency'] = retest_df['avg_latency'] / retest_df['avg_latency'].max()
+                logging.debug(f"Retest Dataframe: {retest_df.head()}")
                 retest_df_stddev = retest_df.std()
                 # logging.debug(f"Retest Dataframe: {retest_df}")
                 if retest_df_stddev['normlized_throughput'] > 0.05 or retest_df_stddev['normlized_latency'] > 0.05:
@@ -172,7 +173,7 @@ class FioOptimizer:
                     is_optimial = True
                     self.optimal_queue_depth = optimal_iodepth
                     self.best_run = self.runs[optimal_iodepth]
-                    logging.info(f"Optimal IO Depth: {self.best_run.io_depth}")
+                    logging.info(f"Optimal IO Depth: {self.best_run.iodepth}")
                     logging.info(f"IOPS            : {self.best_run.total_iops:.03f} \t(std dev: {retest_df_stddev['total_iops']:.03f})")
                     logging.info(f"Latency         : {self.best_run.avg_latency:.03f} µs \t(std dev: {retest_df_stddev['avg_latency']:.03f})")
                     logging.info(f"Throughput      : {self.best_run.total_throughput:.02f} KiBps \t(std dev: {retest_df_stddev['total_throughput']:.03f})")
@@ -182,7 +183,7 @@ class FioOptimizer:
             #     self.best_run = sorted_runs[1]
             #     # self.best_run = self.runs[self.max] if self.runs[self.max] > self.runs[self.min]else self.runs[self.min] 
             #     is_optimial: bool = True
-            #     logging.info(f"Optimal IO Depth: {self.best_run.io_depth}")
+            #     logging.info(f"Optimal IO Depth: {self.best_run.iodepth}")
             #     logging.info(f"IOPS            : {self.best_run.total_iops}")
             #     logging.info(f"Latency         : {self.best_run.avg_latency} µs")
             #     logging.info(f"Throughput      : {self.best_run.total_throughput} KiBps")
@@ -197,35 +198,35 @@ class FioOptimizer:
 
     def prepare_and_run_fio(self, queue_depths: List[int]) -> None:
         logging.debug(f"Preparing to run FIO with IO Depths: {queue_depths}")
-        for io_depth in queue_depths:
-            if io_depth in self.tested_iodepths or io_depth < 1:
-                logging.debug(f"Skipping IO Depth = {io_depth}")
+        for iodepth in queue_depths:
+            if iodepth in self.tested_iodepths or iodepth < 1:
+                logging.debug(f"Skipping IO Depth = {iodepth}")
                 continue
-            logging.info(f"Start Test IO Depth = {io_depth}")
-            self.config['iodepth'] = io_depth
+            logging.info(f"Start Test IO Depth = {iodepth}")
+            self.config['iodepth'] = iodepth
             
             param_list: list = self.__prepare_args()
             
             fio_run_process: subprocess.CompletedProcess = self.run_fio(param_list)
             
-            fio_run: FioBase = self.__process_run(io_depth=io_depth, stdout=fio_run_process.stdout)
+            fio_run: FioBase = self.__process_run(iodepth=iodepth, stdout=fio_run_process.stdout)
             # store current iteration in the "runs" dictionary
-            logging.debug(f"End Test IO Depth: {io_depth}, {fio_run.total_iops} IOPS, {fio_run.avg_latency} µs, {fio_run.total_throughput} KiBps")
+            logging.debug(f"End Test IO Depth: {iodepth}, {fio_run.total_iops} IOPS, {fio_run.avg_latency} µs, {fio_run.total_throughput} KiBps")
 
-    def __process_run(self, io_depth: int, stdout: str) -> FioBase:
+    def __process_run(self, iodepth: int, stdout: str) -> FioBase:
         fio_run: FioBase = FioBase()
-        fio_run.io_depth = io_depth
+        fio_run.iodepth = iodepth
         fio_run.blocksize = self.config['bs']
         fio_run.read_percent = int(self.config['rwmixread'])
         fio_run.parse_stdout(raw_stdout=stdout)
-        self.runs[io_depth] = fio_run
-        self.tested_iodepths.append(io_depth)
-        self.runs_raw[io_depth] = stdout.decode('utf-8')
+        self.runs[iodepth] = fio_run
+        self.tested_iodepths.append(iodepth)
+        self.runs_raw[iodepth] = stdout.decode('utf-8')
         return fio_run
 
     def to_DataFrame(self) -> pd.DataFrame:
         df = pd.DataFrame([x.__dict__ for x in self.runs.values()])
-        df.set_index('io_depth', inplace=True)
+        # df.set_index('iodepth', inplace=True)
         return df
     
     def __prepare_args(self) -> list:

@@ -23,13 +23,9 @@ def arg_parser_setup() -> Namespace:
                         help='Block Sizes,[randrw/rw] to test. Defaults to 8K,randrw. ' +
                             'Append ,rw to specify sequential IO and ,randrw for random IO. ' +
                             'For multiple block sizes use -bs 8K,randrw 32K,rw 64K,rw')
-    parser.add_argument('-rw', '--readpercentages', nargs='+', default=["50"],
-                        help='Read Percentage to test. Defaults to 50, for multiple read percentages use -rw 0 25 50 75 100')
+    parser.add_argument('-rw', '--readpercentages', nargs='+', default=["0", "25", "50", "75", "100"],
+                        help='Read Percentage to test. Defaults to 0 25 50 75 100, for multiple read percentages use -rw 0 10 20 30 40')
     # region advanced options
-    parser.add_argument('-min', '--minimum', type=int, default=1, 
-                        action='store', help='Minimum Queue Depth to test. Defaults to 1')
-    parser.add_argument('-max', '--maximum', type=int, default=256, 
-                        action='store', help='Maximum Queue Depth to test. Defaults to 256, max recommended is 65536')
     parser.add_argument('-c', '--config', default='fio.ini',
                         help='path to config file. Defaults to fio.ini')
     parser.add_argument('-e', '--email', nargs='+', 
@@ -37,34 +33,40 @@ def arg_parser_setup() -> Namespace:
     parser.add_argument('-tw', '--throughputweight', type=int, default=1,
                         help='Weight of Throughput for ATP calculation. Defaults to 1')
     # endregion advanced options
-    #parser.add_argument('-mode', '--mode', default="max_io_rate", help="Mode to run fio in. Defaults to rw")
     parser.add_argument('-n', '--name', default="fio-test", help="Name of the fio job(s). Defaults to job1")
     args = parser.parse_args()
     logging.debug(f"Arguments: {args}")
     return args
 
-def save_single_output(fio_opt: FioOptimizer) -> None:
+def save_single_output(fio_opt: FioOptimizer, timestamp: datetime) -> None:
     """
     
     """
-    output_folder: str = os.path.join(os.getcwd(), 
-                                      f'output/{fio_opt.config["bs"]}_{fio_opt.config["rw"]}/{fio_opt.config["rwmixread"]}')
+    output_folder: str = os.path.join(os.getcwd(), f'output/ifio_{timestamp}', f'/{fio_opt.config["bs"]}_{fio_opt.config["rw"]}_{fio_opt.config["rwmixread"]}')
+    logging.debug(f"Saving output to {output_folder}")
     try:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder, exist_ok=True)
         fio_optimizer_df = fio_opt.to_DataFrame()
+        logging.debug(fio_optimizer_df.head())
         logging.info(f"Saving csv to {output_folder}/fio.csv")
         fio_optimizer_df.to_csv(f'{output_folder}/fio.csv')
         logging.info(f"Saving Raw Output to {output_folder}/raw.json")
         with open(f'{output_folder}/raw.json', 'w') as f:
             json.dump(fio_opt.runs_raw, f)
+        fig: plt.Figure = pgreports.generate_single_run_graphs(fio_optimizer_df)
+        # plt.plot(figure=fig)
+        fig.savefig(f'{output_folder}_queueDepthChart.png')
+
     except json.JSONDecodeError as jde:
         logging.debug(f'failed to save results: {jde}')
 
-def save_summary_output(results: Dict[tuple, FioOptimizer]) -> None:
+def save_summary_output(results: Dict[tuple, FioOptimizer], timestamp: datetime) -> None:
     logging.info("Saving Summary Output")
     output_folder: str = os.path.join(os.getcwd(), 
-                                      f'output/summary_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+                                      f'output/ifio_{timestamp}')
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder, exist_ok=True)
     combined_results: pd.DataFrame = pd.DataFrame()
     # best_runs: Dict[str, FioBase] = {}
     best_runs_df: pd.DataFrame = pd.DataFrame()
@@ -86,13 +88,14 @@ def save_summary_output(results: Dict[tuple, FioOptimizer]) -> None:
         fig: plt.Figure = pgreports.generate_rwmix_stacked_graphs(blocksize_df)
         if not os.path.exists(output_folder):
             os.makedirs(output_folder, exist_ok=True)
-        fig.savefig(f'{output_folder}/{blocksize[0]}_rwmix.png')
+        fig.savefig(f'{output_folder}/{blocksize}_{blocksize_df["read_percent"].values[0]}.png')
     
     # pgreports.generate_fio_report(combined_results, output_folder)
 
 
 
 def main():
+    args = arg_parser_setup()
     logging.basicConfig(format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%dT%H:%M:%S', 
                         level=logging.INFO,
@@ -107,16 +110,23 @@ def main():
         logging.debug("Verbose Output Enabled")
         logging.debug(f"Arguments: {args}")
 
+    
     values_to_test: list = []
     results: dict = {}
-    for blocksize in args.blocksize:
-        for read_percentage in args.readpercentages:
+    blocksizes = args.blocksize
+    if len(blocksizes) == 1: 
+        blocksizes = blocksizes[0].split(" ")
+    for blocksize in blocksizes:
+        read_percentages = args.readpercentages
+        if len(read_percentages) == 1:
+            read_percentages = read_percentages[0].split(" ")
+        for read_percentage in read_percentages:
             bs = blocksize.split(',')[0]
             rw = blocksize.split(',')[1] if len(blocksize.split(',')) > 1 else 'randrw'
             values_to_test.append((bs, rw, read_percentage))
     logging.info(f'Total Values to Test: {len(values_to_test)}')
     logging.debug(f'Values to Test: {values_to_test}')
-
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     for index, values in enumerate(values_to_test):
         logging.info(f"Starting {index+1} of {len(values_to_test)}:  {values[0]} {values[1]} {values[2]} ")
         fio_optimizer: FioOptimizer = FioOptimizer()
@@ -130,19 +140,19 @@ def main():
         fio_optimizer.config['bs'] = values[0]
         fio_optimizer.config['rw'] = values[1]
         fio_optimizer.config['rwmixread'] = values[2]
-        fio_optimizer.min = args.minimum if args.minimum > 0 else 1
-        fio_optimizer.max = args.maximum if args.maximum > 0 else 65536
+        fio_optimizer.min = 1
+        fio_optimizer.max = 65536
         fio_optimizer.throughputweight = args.throughputweight if args.throughputweight > 0 else 1
 
         logging.debug(f"Optimizer Config: {fio_optimizer.config}")
         fio_optimizer.find_optimal_iodepth()
 
-        save_single_output(fio_optimizer)
+        save_single_output(fio_optimizer, timestamp)
         results[values] = fio_optimizer
         logging.info(f"Finished {index+1} of {len(values_to_test)}:  {values[0]} {values[1]} {values[2]} ")
         logging.info(f"##################################################")
 
-    save_summary_output(results)
+    save_summary_output(results, timestamp)
         
 
         

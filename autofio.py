@@ -48,14 +48,15 @@ def save_single_output(fio_opt: FioOptimizer, timestamp: datetime) -> None:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder, exist_ok=True)
         fio_optimizer_df = fio_opt.to_DataFrame()
+        logging.debug(fio_optimizer_df.head())
         logging.info(f"Saving csv to {output_folder}/fio.csv")
         fio_optimizer_df.to_csv(f'{output_folder}/fio.csv')
         logging.info(f"Saving Raw Output to {output_folder}/raw.json")
         with open(f'{output_folder}/raw.json', 'w') as f:
             json.dump(fio_opt.runs_raw, f)
         fig: plt.Figure = pgreports.generate_single_run_graphs(fio_optimizer_df)
-        plt.plot(fig)
-        plt.savefig(f'{output_folder}_queueDepthChart.png')
+        # plt.plot(figure=fig)
+        fig.savefig(f'{output_folder}_queueDepthChart.png')
 
     except json.JSONDecodeError as jde:
         logging.debug(f'failed to save results: {jde}')
@@ -64,6 +65,8 @@ def save_summary_output(results: Dict[tuple, FioOptimizer], timestamp: datetime)
     logging.info("Saving Summary Output")
     output_folder: str = os.path.join(os.getcwd(), 
                                       f'output/ifio_{timestamp}')
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder, exist_ok=True)
     combined_results: pd.DataFrame = pd.DataFrame()
     # best_runs: Dict[str, FioBase] = {}
     best_runs_df: pd.DataFrame = pd.DataFrame()
@@ -92,6 +95,7 @@ def save_summary_output(results: Dict[tuple, FioOptimizer], timestamp: datetime)
 
 
 def main():
+    args = arg_parser_setup()
     logging.basicConfig(format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%dT%H:%M:%S', 
                         level=logging.INFO,
@@ -105,6 +109,7 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
         logging.debug("Verbose Output Enabled")
         logging.debug(f"Arguments: {args}")
+
     
     values_to_test: list = []
     results: dict = {}
