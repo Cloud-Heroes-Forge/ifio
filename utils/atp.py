@@ -56,7 +56,7 @@ class ATP():
             # another possible solution would be to use np.interp to find the intersection point
             if new_index.dropna().empty:
                 self.generated_data['throughput_divided_by_latency'] = self.generated_data['throughput'] / self.generated_data['avg_latency']
-                new_index: pd.DataFrame = self.generated_data[self.generated_data['throughput_divided_by_latency'] == self.generated_data['throughput_divided_by_latency'].max()]
+                new_index: pd.DataFrame = self.generated_data.sort_values(by='throughput_divided_by_latency', ascending=True)
             # if new_index.dropna().empty:
             #     logging.warning(f"Could not find a value of j, dropping top 10% of latency data set: {self.generated_data.size} ")
             #     # TODO DIRTY FIX - variablize 5000 to a user specified latency value 
@@ -65,11 +65,11 @@ class ATP():
             #     self.latency_curve = calculate_latency_curve(self.generated_data['throughput'], self.generated_data['avg_latency'])
             # else: 
             #     new_index = new_index.idxmin()
-            # loop_counter += 1
-            # if loop_counter > 10:
-            #     self.j = self.generated_data.loc[new_index, ['throughput', 'avg_latency']].index[0]
-            #     logging.warning(f"Could not find a value of j, using the minimum ATP value: {self.j}")
-            #     return
+            loop_counter += 1
+            if loop_counter > 10:
+                self.j = self.generated_data.loc[new_index, ['throughput', 'avg_latency']].index[0]
+                logging.warning(f"Could not find a value of j, using the minimum ATP value: {self.j}")
+                return
 
         # return the iodepth (index) of the generated_data that has the lowest ATP
         self.j = self.generated_data.loc[new_index, ['throughput', 'avg_latency']].index[0]
