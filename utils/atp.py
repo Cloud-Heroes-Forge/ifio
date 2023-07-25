@@ -25,7 +25,6 @@ class ATP():
     def __init__(self, 
                  data: pd.DataFrame,
                  alpha: int = 1) -> None:
-        self.j = 1
         self.data: pd.DataFrame = data
         self.generated_data: pd.DataFrame = pd.DataFrame()
         self.generated_data['throughput']: np.ndarray = np.linspace(start=self.data['total_throughput'].min(), 
@@ -45,7 +44,6 @@ class ATP():
         
         # Find the smallest index where ort * 2 - avg_latency is negative
         new_index: pd.DataFrame = pd.DataFrame()
-        loop_counter = 0 
         while new_index.dropna().empty:
             self.generated_data['avg_latency']: np.ndarray = self.latency_curve(self.generated_data['throughput'])
             self.generated_data['ORT']: np.ndarray = np.array([self.__calculate_ort(x=x, curve=self.latency_curve) for x in self.generated_data['throughput']])
@@ -55,21 +53,11 @@ class ATP():
             # This solution redraws the curves with a smaller range of throughput values by dropping the top 10% quantile of latency values
             # another possible solution would be to use np.interp to find the intersection point
             if new_index.dropna().empty:
-                self.generated_data['throughput_divided_by_latency'] = self.generated_data['throughput'] / self.generated_data['avg_latency']
-                new_index: pd.DataFrame = self.generated_data.sort_values(by='throughput_divided_by_latency', ascending=True)
-            # if new_index.dropna().empty:
-            #     logging.warning(f"Could not find a value of j, dropping top 10% of latency data set: {self.generated_data.size} ")
-            #     # TODO DIRTY FIX - variablize 5000 to a user specified latency value 
-            #     self.generated_data = self.generated_data[self.generated_data['avg_latency'] < 5000]
-            #     self.generated_data = self.generated_data[self.generated_data['avg_latency'] < self.generated_data['avg_latency'].quantile(0.90)]
-            #     self.latency_curve = calculate_latency_curve(self.generated_data['throughput'], self.generated_data['avg_latency'])
-            # else: 
-            #     new_index = new_index.idxmin()
-            loop_counter += 1
-            if loop_counter > 10:
-                self.j = self.generated_data.loc[new_index, ['throughput', 'avg_latency']].index[0]
-                logging.warning(f"Could not find a value of j, using the minimum ATP value: {self.j}")
-                return
+                logging.warning(f"Could not find a value of j, dropping top 10% of latency data set: {self.generated_data.size} ")
+                self.generated_data = self.generated_data[self.generated_data['avg_latency'] < self.generated_data['avg_latency'].quantile(0.90)]
+                self.latency_curve = calculate_latency_curve(self.generated_data['throughput'], self.generated_data['avg_latency'])
+            else: 
+                new_index = new_index.idxmin()
 
         # return the iodepth (index) of the generated_data that has the lowest ATP
         self.j = self.generated_data.loc[new_index, ['throughput', 'avg_latency']].index[0]
