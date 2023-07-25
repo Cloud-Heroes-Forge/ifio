@@ -54,7 +54,8 @@ class ATP():
             # another possible solution would be to use np.interp to find the intersection point
             if new_index.dropna().empty:
                 logging.warning(f"Could not find a value of j, dropping top 10% of latency data set: {self.generated_data.size} ")
-                self.generated_data = self.generated_data[self.generated_data['avg_latency'] < self.generated_data['avg_latency'].quantile(0.90)]
+                # temp fix to just limit latency to under 5000 us (5ms)
+                self.generated_data = self.generated_data[self.generated_data['avg_latency'] < 5000]
                 self.latency_curve = calculate_latency_curve(self.generated_data['throughput'], self.generated_data['avg_latency'])
             else: 
                 new_index = new_index.idxmin()

@@ -131,7 +131,7 @@ class FioOptimizer:
         # store state file (csv maybe), read that state file in on load and just return data 
 
     def find_optimal_iodepth(self) -> FioBase:
-        queue_depths = [2**x for x in range(0,10)]
+        queue_depths = [1, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80]
 
         is_optimial: bool = False
         current_data: pd.DataFrame = None
