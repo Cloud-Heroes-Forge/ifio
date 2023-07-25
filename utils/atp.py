@@ -44,11 +44,12 @@ class ATP():
         
         # Find the smallest index where ort * 2 - avg_latency is negative
         new_index: pd.DataFrame = pd.DataFrame()
+        loop_count: int = 0
         while new_index.dropna().empty:
             self.generated_data['avg_latency']: np.ndarray = self.latency_curve(self.generated_data['throughput'])
             self.generated_data['ORT']: np.ndarray = np.array([self.__calculate_ort(x=x, curve=self.latency_curve) for x in self.generated_data['throughput']])
             self.generated_data['ATP']: np.ndarray = np.array([self.__calculate_atp(x=x, curve=self.latency_curve) for x in self.generated_data['throughput']])
-            new_index: pd.DataFrame = self.generated_data[((2 * self.generated_data['ORT']) - self.generated_data['avg_latency']) < 0].sort_values(by='ATP', ascending=True)
+            new_index = self.generated_data[((2 * self.generated_data['ORT']) - self.generated_data['avg_latency']) < 0].sort_values(by='ATP', ascending=True)
             # handle the case where the two lines do not intersect.
             # This solution redraws the curves with a smaller range of throughput values by dropping the top 10% quantile of latency values
             # another possible solution would be to use np.interp to find the intersection point
@@ -56,8 +57,12 @@ class ATP():
                 logging.warning(f"Could not find a value of j, dropping top 10% of latency data set: {self.generated_data.size} ")
                 self.generated_data = self.generated_data[self.generated_data['avg_latency'] < self.generated_data['avg_latency'].quantile(0.90)]
                 self.latency_curve = calculate_latency_curve(self.generated_data['throughput'], self.generated_data['avg_latency'])
-            else: 
-                new_index = new_index.idxmin()
+            # else: 
+            #     new_index = new_index.idxmin()
+            loop_count += 1
+            if loop_count > 10:
+                self.generated_data['throughput_divided_by_iops'] = self.generated_data['throughput'] / self.generated_data['avg_latency']
+                new_index = self.generated_data['throughput_divided_by_iops'].sort_values(by='throughput_divided_by_iops', ascending=False)
 
         # return the iodepth (index) of the generated_data that has the lowest ATP
         self.j = self.generated_data.loc[new_index, ['throughput', 'avg_latency']].index[0]
